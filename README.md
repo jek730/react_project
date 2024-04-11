@@ -1,70 +1,162 @@
-# Getting Started with Create React App
+# 설정
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## .prettierrc 설정
 
-## Available Scripts
+```json
+{
+  "singleQuote": true,
+  "semi": true,
+  "useTabs": false,
+  "tabWidth": 2,
+  "trailingComma": "all"
+}
+```
 
-In the project directory, you can run:
+## 의존성 : 필요 라이브러리
 
-### `yarn start`
+> 필요 라이브러리
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- react-router-dom : 라우터
+- sass, styled-components, classnames : 스타일링 목적
+- immer : 불변성 관리
+- react-icons : 리액트에서 제공하는 아이콘 라이브러리
+- @loadable/component : 지연로딩
+- react-helmet-async : head 태그 내의 특정태그의 내용을 변경 시
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+의존성 설치
 
-### `yarn test`
+```
+yarn add react-router-dom sass styled-components classnames immer react-icons @loadable/component
+yarn add react-helmet-async
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## react-helmet-async 설정
 
-### `yarn build`
+- src/index.js
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```JSX
+...
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+import { HelmetProvider } from 'react-helmet-async';
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+...
 
-### `yarn eject`
+root.render(
+  <React.StrictMode>
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
+  </React.StrictMode>,
+);
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- 사용법
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```JSX
+import { Helmet } from 'react-helmet-async';
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+const App = () => {
+  return (
+    <>
+      <Helmet>
+        <title>사이트 제목 변경 테스트!</title>
+      </Helmet>
+    </>
+  );
+};
 
-## Learn More
+export default App;
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 메시지, 다국어 처리
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- 의존성 : i18next, react-i18next
+- 의존성 설치
 
-### Code Splitting
+```
+yarn add i18next rezt-i18next
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- 언어파일 생성
 
-### Analyzing the Bundle Size
+  - src/langs/ko, src/langs/en 폴더 생성
+  - 각 폴더별로 공통 문구 - commons.js, 검증 문구 - validations.js, 에러 문구 - errors.js
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- 언어파일 통합 : 예) src/langs/ko/index.js
 
-### Making a Progressive Web App
+```javascript
+import commos from './commons';
+import validations from './validations';
+import errors from './errors';
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+const ko = { ...commons, ...validations, ...errors };
 
-### Advanced Configuration
+export default ko;
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- 설정 파일 구성 : src/i18n.js
 
-### Deployment
+```javascript
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import ko from './langs/ko';
+import en from './langs/en';
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+const resources = {
+  en: {
+    translation: en,
+  },
+  ko: {
+    translation: ko,
+  },
+};
 
-### `yarn build` fails to minify
+i18n.use(initReactI18next).init({
+  resources,
+  lng: 'ko',
+});
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- 설정 반영 : src/index.js
+
+```javascript
+...
+
+import './i18n';
+
+...
+
+```
+
+- 적용하기 : useTranslation 훅 / react-i18next
+  - t : 메시지 조회 함수
+  - i18n : 편의 기능 객체, changeLanguage(..) : 언어 변경
+
+```jsx
+import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
+
+const App = () => {
+  const { t, i18n } = useTranslation();
+
+  return (
+    <>
+      <Helmet>
+        <title>사이트 제목 변경 테스트!</title>
+      </Helmet>
+      <div>{t('아이디')}</div>
+      <div>{t('약관에_동의')}</div>
+      <div>{t('없는_문구')}</div>
+      <button type="button" onClick={() => i18n.changeLanguage('ko')}>
+        한국어
+      </button>
+      <button type="button" onClick={() => i18n.changeLanguage('en')}>
+        English
+      </button>
+    </>
+  );
+};
+
+export default App;
+```
